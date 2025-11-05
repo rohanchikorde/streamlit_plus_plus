@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "streamlit-plus"
+version = "0.1.0"
+description = "Advanced UI Framework for Streamlit"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "streamlit>=1.28.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/streamlit-plus"
+Repository = "https://github.com/yourusername/streamlit-plus"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["streamlit_plus*"]
