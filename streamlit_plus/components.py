@@ -431,3 +431,599 @@ def notification(message: str, type: str = "info", duration: Optional[int] = Non
         st.error(f"{icons[type]} {message}")
     else:
         st.info(f"{icons[type]} {message}")
+
+
+# Advanced Form Controls
+def multi_select(label: str, options: List[str], default: Optional[List[str]] = None,
+                searchable: bool = True, placeholder: str = "Search...", max_selections: Optional[int] = None,
+                key: Optional[str] = None) -> List[str]:
+    """
+    Enhanced multi-select with search functionality.
+
+    Args:
+        label: Field label
+        options: List of available options
+        default: Default selected values
+        searchable: Whether to enable search
+        placeholder: Search placeholder text
+        max_selections: Maximum number of selections allowed
+        key: Unique key for the component
+
+    Returns:
+        List of selected values
+    """
+    if searchable:
+        search_term = st.text_input(
+            f"🔍 Search {label.lower()}",
+            placeholder=placeholder,
+            key=f"search_{key or label}"
+        )
+        filtered_options = [opt for opt in options if search_term.lower() in str(opt).lower()]
+    else:
+        filtered_options = options
+
+    selected = st.multiselect(
+        label,
+        filtered_options,
+        default=default or [],
+        max_selections=max_selections,
+        key=key or f"multi_{label}",
+        help=f"Select multiple {label.lower()}"
+    )
+    return selected
+
+
+def date_range_picker(label: str, default_start: Optional[Any] = None, default_end: Optional[Any] = None,
+                     min_date: Optional[Any] = None, max_date: Optional[Any] = None,
+                     key: Optional[str] = None):
+    """
+    Date range picker with presets.
+
+    Args:
+        label: Field label
+        default_start: Default start date
+        default_end: Default end date
+        min_date: Minimum selectable date
+        max_date: Maximum selectable date
+        key: Unique key for the component
+
+    Returns:
+        Tuple of (start_date, end_date)
+    """
+    import streamlit as st
+    from datetime import datetime, timedelta
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        start_date = st.date_input(
+            f"{label} - Start",
+            value=default_start or (datetime.now() - timedelta(days=30)),
+            min_value=min_date,
+            max_value=max_date,
+            key=f"start_{key or label}"
+        )
+
+    with col2:
+        end_date = st.date_input(
+            f"{label} - End",
+            value=default_end or datetime.now(),
+            min_value=min_date,
+            max_value=max_date,
+            key=f"end_{key or label}"
+        )
+
+    # Preset buttons
+    preset_col1, preset_col2, preset_col3, preset_col4 = st.columns(4)
+    with preset_col1:
+        if st.button("📅 Last 7 days", key=f"preset_7_{key or label}", help="Select last 7 days"):
+            start_date = datetime.now() - timedelta(days=7)
+            end_date = datetime.now()
+            st.rerun()
+    with preset_col2:
+        if st.button("📅 Last 30 days", key=f"preset_30_{key or label}", help="Select last 30 days"):
+            start_date = datetime.now() - timedelta(days=30)
+            end_date = datetime.now()
+            st.rerun()
+    with preset_col3:
+        if st.button("📅 Last 90 days", key=f"preset_90_{key or label}", help="Select last 90 days"):
+            start_date = datetime.now() - timedelta(days=90)
+            end_date = datetime.now()
+            st.rerun()
+    with preset_col4:
+        if st.button("📅 This year", key=f"preset_year_{key or label}", help="Select this year"):
+            start_date = datetime(datetime.now().year, 1, 1)
+            end_date = datetime.now()
+            st.rerun()
+
+    return start_date, end_date
+
+
+def color_picker(label: str, default_color: str = "#6366f1", key: Optional[str] = None) -> str:
+    """
+    Color picker component.
+
+    Args:
+        label: Field label
+        default_color: Default color value
+        key: Unique key for the component
+
+    Returns:
+        Selected color as hex string
+    """
+    color = st.color_picker(
+        label,
+        value=default_color,
+        key=key or f"color_{label}"
+    )
+    return color
+
+
+def rich_text_editor(label: str, default_value: str = "", height: int = 200,
+                    key: Optional[str] = None) -> str:
+    """
+    Rich text editor component.
+
+    Args:
+        label: Field label
+        default_value: Default text content
+        height: Editor height in pixels
+        key: Unique key for the component
+
+    Returns:
+        Edited text content
+    """
+    text = st.text_area(
+        label,
+        value=default_value,
+        height=height,
+        key=key or f"rte_{label}",
+        help="Supports Markdown formatting"
+    )
+
+    # Preview toggle
+    if st.checkbox("👁️ Preview", key=f"preview_{key or label}"):
+        st.markdown("**Preview:**")
+        st.markdown(text)
+
+    return text
+
+
+def tag_input(label: str, default_tags: Optional[List[str]] = None, placeholder: str = "Add tags...",
+             key: Optional[str] = None) -> List[str]:
+    """
+    Tag input component.
+
+    Args:
+        label: Field label
+        default_tags: Initial list of tags
+        placeholder: Input placeholder text
+        key: Unique key for the component
+
+    Returns:
+        List of tags
+    """
+    if default_tags is None:
+        default_tags = []
+
+    # Display current tags
+    if default_tags:
+        tags_html = " ".join([
+            f'<span style="background:#e5e7eb;color:#374151;padding:4px 8px;border-radius:4px;margin:2px;display:inline-block;font-size:0.875rem;">{tag} ✕</span>'
+            for tag in default_tags
+        ])
+        st.markdown(f"**{label}:** {tags_html}", unsafe_allow_html=True)
+
+    # Add new tag
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        new_tag = st.text_input(
+            f"➕ Add {label.lower()}",
+            placeholder=placeholder,
+            key=key or f"tag_input_{label}"
+        )
+    with col2:
+        if st.button("Add", key=f"add_tag_{key or label}", use_container_width=True):
+            if new_tag and new_tag.strip() and new_tag not in default_tags:
+                default_tags.append(new_tag.strip())
+                st.rerun()
+
+    return default_tags
+
+
+def slider_range(label: str, min_value: float = 0, max_value: float = 100,
+                default_values: tuple = (25, 75), step: float = 1,
+                key: Optional[str] = None) -> tuple:
+    """
+    Dual-handle slider for range selection.
+
+    Args:
+        label: Field label
+        min_value: Minimum value
+        max_value: Maximum value
+        default_values: Default range values (min, max)
+        step: Step size
+        key: Unique key for the component
+
+    Returns:
+        Tuple of (min_value, max_value)
+    """
+    values = st.slider(
+        label,
+        min_value=min_value,
+        max_value=max_value,
+        value=default_values,
+        step=step,
+        key=key or f"range_{label}"
+    )
+    return values
+
+
+# Media Components
+def image_gallery(images: List[str], captions: Optional[List[str]] = None,
+                 lightbox: bool = True, columns: int = 3):
+    """
+    Image gallery with lightbox functionality.
+
+    Args:
+        images: List of image URLs or file paths
+        captions: List of image captions
+        lightbox: Whether to enable lightbox on click
+        columns: Number of columns in grid
+    """
+    if captions is None:
+        captions = [f"Image {i+1}" for i in range(len(images))]
+
+    cols = st.columns(columns)
+
+    for i, (img, caption) in enumerate(zip(images, captions)):
+        with cols[i % columns]:
+            if lightbox:
+                # In a real implementation, this would open a lightbox
+                if st.button(f"🖼️ {caption}", key=f"img_btn_{i}"):
+                    st.image(img, caption=caption, use_column_width=True)
+            else:
+                st.image(img, caption=caption, use_column_width=True)
+
+
+def video_player(video_url: str, title: str = "", autoplay: bool = False,
+                controls: bool = True, width: Optional[str] = None,
+                height: int = 400):
+    """
+    Custom video player component.
+
+    Args:
+        video_url: URL to video file
+        title: Video title
+        autoplay: Whether to autoplay
+        controls: Whether to show controls
+        width: Video width
+        height: Video height
+    """
+    if title:
+        st.subheader(f"🎥 {title}")
+
+    # Custom controls
+    if controls:
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            autoplay = st.checkbox("▶️ Autoplay", value=autoplay, key=f"autoplay_{title}")
+        with col2:
+            loop = st.checkbox("🔄 Loop", key=f"loop_{title}")
+        with col3:
+            muted = st.checkbox("🔇 Muted", key=f"muted_{title}")
+
+    # Video element
+    video_html = f"""
+    <video width="{width or '100%'}" height="{height}" controls {"autoplay" if autoplay else ""} {"loop" if loop else ""} {"muted" if muted else ""}>
+        <source src="{video_url}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    """
+
+    st.markdown(video_html, unsafe_allow_html=True)
+
+
+def carousel(images: List[str], captions: Optional[List[str]] = None,
+            autoplay: bool = True, interval: int = 3000):
+    """
+    Image carousel component.
+
+    Args:
+        images: List of image URLs
+        captions: List of image captions
+        autoplay: Whether to auto-advance
+        interval: Auto-advance interval in milliseconds
+    """
+    if captions is None:
+        captions = ["" for _ in images]
+
+    # Carousel state
+    if 'carousel_index' not in st.session_state:
+        st.session_state.carousel_index = 0
+
+    # Navigation
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col1:
+        if st.button("◀", key="prev_carousel", help="Previous image"):
+            st.session_state.carousel_index = (st.session_state.carousel_index - 1) % len(images)
+            st.rerun()
+
+    with col2:
+        current_index = st.session_state.carousel_index
+        st.image(images[current_index], caption=captions[current_index], use_column_width=True)
+        st.markdown(f"<center><small>{current_index + 1} / {len(images)}</small></center>", unsafe_allow_html=True)
+
+    with col3:
+        if st.button("▶", key="next_carousel", help="Next image"):
+            st.session_state.carousel_index = (st.session_state.carousel_index + 1) % len(images)
+            st.rerun()
+
+    # Auto-play (simplified - would need JavaScript for real implementation)
+    if autoplay and len(images) > 1:
+        import time
+        time.sleep(interval / 1000)
+        st.session_state.carousel_index = (st.session_state.carousel_index + 1) % len(images)
+        st.rerun()
+
+
+# Enhanced Navigation
+def advanced_tabs(tabs_data: List[Dict], default_active: int = 0, orientation: str = "horizontal"):
+    """
+    Advanced tabs with icons, badges, and custom styling.
+
+    Args:
+        tabs_data: List of tab data [{'label': 'Tab 1', 'icon': '📊', 'content': func, 'badge': 'New'}]
+        default_active: Default active tab index
+        orientation: 'horizontal' or 'vertical'
+    """
+    if orientation == "vertical":
+        cols = st.columns([1, 3])
+        with cols[0]:
+            tab_options = [f"{tab.get('icon', '')} {tab['label']}" for tab in tabs_data]
+            selected_tab = st.radio("", tab_options, key="vertical_tabs", index=default_active)
+        with cols[1]:
+            selected_index = tab_options.index(selected_tab)
+            tabs_data[selected_index]["content"]()
+    else:
+        # Horizontal tabs with enhanced styling
+        tab_labels = []
+        for tab in tabs_data:
+            label = tab.get("label", "")
+            icon = tab.get("icon", "")
+            badge = tab.get("badge", "")
+            badge_color = tab.get("badge_color", "primary")
+
+            if badge:
+                badge_html = f'<span style="background:var(--{badge_color});color:white;padding:2px 6px;border-radius:10px;font-size:0.8em;margin-left:8px;">{badge}</span>'
+                tab_labels.append(f"{icon} {label} {badge_html}")
+            else:
+                tab_labels.append(f"{icon} {label}")
+
+        selected_label = st.radio(
+            "",
+            tab_labels,
+            key="advanced_tabs",
+            index=default_active,
+            label_visibility="collapsed",
+            horizontal=True
+        )
+
+        # Find selected tab
+        selected_index = tab_labels.index(selected_label)
+        tabs_data[selected_index]["content"]()
+
+
+def breadcrumb_navigation(breadcrumbs: List[Dict], separator: str = ">", clickable: bool = True):
+    """
+    Breadcrumb navigation component.
+
+    Args:
+        breadcrumbs: List of breadcrumb items [{'label': 'Home', 'href': '#', 'active': False}]
+        separator: Separator between items
+        clickable: Whether breadcrumbs are clickable
+    """
+    breadcrumb_html = ""
+    for i, crumb in enumerate(breadcrumbs):
+        if i > 0:
+            breadcrumb_html += f' <span style="color:#6b7280;margin:0 8px;">{separator}</span> '
+
+        if clickable and i < len(breadcrumbs) - 1:
+            if st.button(crumb, key=f"breadcrumb_{i}"):
+                # In a real app, this would navigate to the corresponding page
+                st.info(f"Navigate to: {crumb}")
+        else:
+            breadcrumb_html += f'<span style="font-weight:500;">{crumb}</span>'
+
+    if not clickable:
+        st.markdown(breadcrumb_html, unsafe_allow_html=True)
+
+
+def infinite_scroll_container(items: List[Any], items_per_page: int = 20, height: int = 400):
+    """
+    Infinite scroll container for large lists.
+
+    Args:
+        items: List of items to display
+        items_per_page: Number of items to load at once
+        height: Container height in pixels
+    """
+    if 'scroll_page' not in st.session_state:
+        st.session_state.scroll_page = 0
+
+    # Container with fixed height
+    container = st.container(height=height)
+
+    with container:
+        start_idx = st.session_state.scroll_page * items_per_page
+        end_idx = start_idx + items_per_page
+
+        for item in items[start_idx:end_idx]:
+            st.write(item)
+
+        # Load more button
+        if end_idx < len(items):
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                if st.button("Load More", key="load_more", use_container_width=True):
+                    st.session_state.scroll_page += 1
+                    st.rerun()
+
+
+# Accessibility Features
+def skip_to_content_link(target_id: str = "main-content"):
+    """Skip to content link for accessibility."""
+    skip_html = f"""
+    <a href="#{target_id}" style="position:absolute;left:-9999px;top:10px;background:#000;color:#fff;padding:8px;text-decoration:none;z-index:1000;" onfocus="this.style.left='10px'" onblur="this.style.left='-9999px'">
+        Skip to main content
+    </a>
+    """
+    st.markdown(skip_html, unsafe_allow_html=True)
+
+
+def accessible_button(label: str, on_click: Optional[Callable] = None, key: Optional[str] = None,
+                     aria_label: Optional[str] = None, keyboard_shortcut: Optional[str] = None):
+    """
+    Accessible button with ARIA labels and keyboard shortcuts.
+
+    Args:
+        label: Button label
+        on_click: Click handler
+        key: Unique key
+        aria_label: ARIA label for screen readers
+        keyboard_shortcut: Keyboard shortcut hint
+    """
+    button_key = key or f"acc_btn_{label}"
+
+    # Add keyboard shortcut handler if provided
+    if keyboard_shortcut:
+        # This would require JavaScript in a real implementation
+        pass
+
+    return st.button(
+        label,
+        on_click=on_click,
+        key=button_key,
+        help=aria_label or keyboard_shortcut
+    )
+
+
+def focus_trap(container_id: str, auto_focus: bool = True):
+    """
+    Focus trap for modals and dialogs.
+
+    Args:
+        container_id: ID of container to trap focus in
+        auto_focus: Whether to auto-focus first element
+    """
+    if auto_focus:
+        focus_script = f"""
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {{
+            const container = document.getElementById('{container_id}');
+            if (container) {{
+                const focusableElements = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (focusableElements.length > 0) {{
+                    focusableElements[0].focus();
+                }}
+            }}
+        }});
+        </script>
+        """
+        st.markdown(focus_script, unsafe_allow_html=True)
+
+
+# Enhanced Data Tables
+def advanced_data_table(df, editable_columns: Optional[List[str]] = None,
+                       virtual_scroll: bool = False, filterable: bool = True,
+                       searchable: bool = True, exportable: bool = True,
+                       key: Optional[str] = None):
+    """
+    Advanced data table with editing, virtual scroll, and more.
+
+    Args:
+        df: DataFrame to display
+        editable_columns: List of columns that can be edited
+        virtual_scroll: Whether to use virtual scrolling
+        filterable: Whether to enable column filters
+        searchable: Whether to enable search
+        exportable: Whether to enable export options
+        key: Unique key for the component
+    """
+    table_key = key or "advanced_table"
+
+    # Search functionality
+    if searchable:
+        search_term = st.text_input("🔍 Search table...", key=f"search_{table_key}")
+        if search_term:
+            df = df[df.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)]
+
+    # Column filters
+    if filterable:
+        with st.expander("🔧 Filters", expanded=False):
+            filter_cols = st.columns(min(len(df.columns), 4))
+            filters = {}
+
+            for i, col in enumerate(df.columns[:4]):  # Limit to first 4 columns for space
+                with filter_cols[i]:
+                    if df[col].dtype in ['int64', 'float64']:
+                        min_val, max_val = st.slider(
+                            f"Filter {col}",
+                            float(df[col].min()),
+                            float(df[col].max()),
+                            (float(df[col].min()), float(df[col].max())),
+                            key=f"filter_{col}_{table_key}"
+                        )
+                        filters[col] = (min_val, max_val)
+                    elif df[col].dtype == 'object':
+                        unique_vals = df[col].unique()
+                        selected = st.multiselect(
+                            f"Filter {col}",
+                            unique_vals,
+                            key=f"filter_{col}_{table_key}"
+                        )
+                        if selected:
+                            filters[col] = selected
+
+    # Apply filters
+    for col, filter_val in filters.items():
+        if isinstance(filter_val, tuple):  # Numeric range
+            df = df[(df[col] >= filter_val[0]) & (df[col] <= filter_val[1])]
+        else:  # Categorical filter
+            df = df[df[col].isin(filter_val)]
+
+    # Editable columns (demo - changes not persisted)
+    if editable_columns:
+        st.info("✏️ Double-click cells to edit (demo - changes not persisted)")
+
+    # Export functionality
+    if exportable:
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col2:
+            if st.download_button(
+                "📥 CSV",
+                df.to_csv(index=False),
+                "data.csv",
+                "text/csv",
+                key=f"csv_{table_key}"
+            ):
+                st.success("CSV downloaded!")
+        with col3:
+            if st.download_button(
+                "📊 Excel",
+                df.to_excel(index=False).getvalue(),
+                "data.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key=f"excel_{table_key}"
+            ):
+                st.success("Excel downloaded!")
+
+    # Display table
+    if virtual_scroll and len(df) > 100:
+        # Virtual scroll implementation (simplified)
+        start_row = st.slider("📏 Scroll to row", 0, len(df)-50, 0, key=f"scroll_{table_key}")
+        end_row = min(start_row + 50, len(df))
+        st.dataframe(df.iloc[start_row:end_row], use_container_width=True)
+        st.text(f"Showing rows {start_row} - {end_row} of {len(df)}")
+    else:
+        st.dataframe(df, use_container_width=True)

@@ -8,6 +8,8 @@ For a UI-focused advanced Streamlit version, you should prioritize visual sophis
 
 ### Advanced Layout System
 
+**Flexible Widget Positioning**: Place widgets anywhere on the screen - left, right, top, or bottom sidebars with customizable sizes and collapsible behavior. Break free from Streamlit's traditional left-sidebar limitation.
+
 **Flexible Grid System**: Implement a comprehensive grid-based layout with drag-and-drop positioning, allowing components to be placed anywhere on the canvas. Move beyond the limited vertical flow and basic columns to support complex multi-column grids, nested layouts, and responsive breakpoints.
 
 **Component Positioning**: Add absolute, relative, and fixed positioning options with z-index control for layering elements. Include floating panels, sidebars that can be pinned/unpinned, and collapsible sections for better space utilization.
@@ -105,6 +107,22 @@ pip install streamlit-plus
 ```python
 import streamlit as st
 import streamlit_plus as stp
+
+# Flexible widget positioning - place widgets anywhere!
+widgets = [
+    {"title": "Search", "content": lambda: st.text_input("Search..."), "expanded": True},
+    {"title": "Filters", "content": lambda: st.multiselect("Categories", ["A", "B", "C"]), "expanded": False}
+]
+
+# Create a collapsible left sidebar
+stp.create_widget_panel("left", "300px", widgets, collapsible=True)
+
+# Create a right sidebar
+stp.create_widget_panel("right", "250px", widgets)
+
+# Create top/bottom bars
+stp.create_widget_panel("top", "150px", widgets)
+stp.create_widget_panel("bottom", "100px", widgets)
 
 # Use advanced components
 stp.grid_layout(...)
